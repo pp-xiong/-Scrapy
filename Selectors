@@ -1,0 +1,101 @@
+Scrapy-selector官方文档: https://doc.scrapy.org/en/latest/topics/selectors.html
+Scrapy-selector演示页面: http://doc.scrapy.org/en/latest/_static/selectors-sample1.html
+
+演示页面代码:
+'''
+<html>
+ <head>
+  <base href='http://example.com/' />
+  <title>Example website</title>
+ </head>
+ <body>
+  <div id='images'>
+   <a href='image1.html'>Name: My image 1 <br /><img src='image1_thumb.jpg' /></a>
+   <a href='image2.html'>Name: My image 2 <br /><img src='image2_thumb.jpg' /></a>
+   <a href='image3.html'>Name: My image 3 <br /><img src='image3_thumb.jpg' /></a>
+   <a href='image4.html'>Name: My image 4 <br /><img src='image4_thumb.jpg' /></a>
+   <a href='image5.html'>Name: My image 5 <br /><img src='image5_thumb.jpg' /></a>
+  </div>
+ </body>
+</html>
+'''
+
+1.获取<title> 中的文本: 
+<title>Example website</title>
+  a.response.xpath('//title/text()'), == F12右键点title行 - copy - copy xpath: /html/head/title + text()
+  b.response.css('title::text')
+  返回值为一个列表: [<Selector xpath='//title/text()' data='Example website'>] 
+  
+  要确实返回文本, 需要用 .extract() 方法, 如下一行:
+  response.xpath('//title/text()').extract()
+  返回值为:['Example website']
+  
+  CSS 选择器可以选择 text 或 attribute 的时候使用 CSS3 pseudo-elements(::):
+  例如: response.css('title::text').extract()
+  
+2.获取 base-URL 和 image-links:
+  获取 base-URL:
+  response.xpath('//base/@href').extract()
+  response.css('base::attr(href)').extract()
+  
+  获取 所有 属性有 image 的 href 的内容:
+  response.xpath('//a[contains(@href, "image")]/@href').extract()
+  response.css('a[href*=image]::attr(href)').extract()
+  
+  获取 a标签中 属性有image的href的img标签的src内容:
+  response.xpath('//a[contains(@href, "image")]/img/@src').extract()
+  response.css('a[href*=image] img::attr(src)').extract()
+
+例子
+'''
+Nesting selectors
+The selection methods (.xpath() or .css()) return a list of selectors of the same type,
+so you can call the selection methods for those selectors too. Here’s an example:
+
+>>> links = response.xpath('//a[contains(@href, "image")]')
+>>> links.extract()
+[u'<a href="image1.html">Name: My image 1 <br><img src="image1_thumb.jpg"></a>',
+ u'<a href="image2.html">Name: My image 2 <br><img src="image2_thumb.jpg"></a>',
+ u'<a href="image3.html">Name: My image 3 <br><img src="image3_thumb.jpg"></a>',
+ u'<a href="image4.html">Name: My image 4 <br><img src="image4_thumb.jpg"></a>',
+ u'<a href="image5.html">Name: My image 5 <br><img src="image5_thumb.jpg"></a>']
+
+>>> for index, link in enumerate(links):
+...     args = (index, link.xpath('@href').extract(), link.xpath('img/@src').extract())
+...     print 'Link number %d points to url %s and image %s' % args
+
+Link number 0 points to url [u'image1.html'] and image [u'image1_thumb.jpg']
+Link number 1 points to url [u'image2.html'] and image [u'image2_thumb.jpg']
+Link number 2 points to url [u'image3.html'] and image [u'image3_thumb.jpg']
+Link number 3 points to url [u'image4.html'] and image [u'image4_thumb.jpg']
+Link number 4 points to url [u'image5.html'] and image [u'image5_thumb.jpg']
+'''
+  
+Selector 有.re()方法来帮助你获取准确的内容, 不过.re()返回的值是strings; (.xpath(), .css()返回的是列表)
+例子:
+'''
+>>> response.xpath('//a[contains(@href, "image")]/text()').re(r'Name:\s*(.*)')
+[u'My image 1',
+ u'My image 2',
+ u'My image 3',
+ u'My image 4',
+ u'My image 5']
+'''
+
+ 注意:
+ 当你使用xpath以 /开头的时候, xpath将会指向文件的绝对路径, 而不是你选择的选择器.
+ 例如:
+    你要提取<div>里面的<P>, 首先你要拿到所有的<div>标签
+    >>> divs = response.xpath('//div')
+    然后你可能会使用下面的用法,错误的提取了所有的<p>标签, 然而他们并不是只在<div>里面
+    >>> for p in dives.xpath('//p'):    #错误用法 - 拿到了整个文档的<p>
+    ...     print(P.extract())
+    
+    正确做法a:(注意[/]前面的[.])
+    >>>for p in divs.xpath('.//p'):     #提取所有<div>内的<p>
+    ...     print(p.extract())
+    
+    正确做法b:
+    >>>for p in divs.xpath('p'):        
+    ...     print(p.extract())
+    
