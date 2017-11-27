@@ -30,7 +30,7 @@ Scrapy-selector演示页面: http://doc.scrapy.org/en/latest/_static/selectors-s
   response.xpath('//title/text()').extract()
   返回值为:['Example website']
   
-  CSS 选择器可以选择 text 或 attribute 的时候使用 CSS3 pseudo-elements(::):
+  CSS 选择器可以选择 text 或 attribute 的时候, 使用 CSS3 pseudo-elements(::):
   例如: response.css('title::text').extract()
   
 2.获取 base-URL 和 image-links:
