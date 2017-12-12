@@ -1,0 +1,46 @@
+需要在环境变量中设置
+from scrapy.contrib.downloadermiddleware.httpproxy import HttpProxyMiddleware
+
+方法一: (默认自带方法)
+  os.environ
+  {
+      http_proxy:http://username:password@192.168.1.1:80/    #带用户名,密码
+      https_proxy:http://192.168.1.1:80/            #无用户名密码
+   }
+   
+方法二:(使用自定义下载中间件)
+
+def to_bytes(text, encoding=None, errors='strict'):
+  if isinstance(text, bytes):
+    return text
+  if not isinstance(text, six.string_types):
+    raise TypeError('to_bytes must receive a unicode, str or bytes object, got %s' % type(text).__name__)
+  if encoding is None:
+     encoding = 'utf-8'
+  return text.encode(encoding, errors)
+  
+class ProxyMiddleware(object):
+  def process_request(self, request, spider):
+    PROXIES = [
+        {'ip_port':'192.168.1.100:80', 'user_pass':''},
+        {'ip_port':'192.168.1.100:80', 'user_pass':''},
+        {'ip_port':'192.168.1.100:80', 'user_pass':''},
+        {'ip_port':'192.168.1.100:80', 'user_pass':''},
+        {'ip_port':'192.168.1.100:80', 'user_pass':''},
+        {'ip_port':'192.168.1.100:80', 'user_pass':''},
+        {'ip_port':'192.168.1.100:80', 'user_pass':''},
+      ]
+     proxy = randon.choice(PROXIES)
+     if proxy['user_pass'] is not None:
+        request.meta['proxy'] = to_bytes("http://%s" % proxy['ip_port'])
+        encoded_user_pass = base64.encodestring(to_bytes(proxy['user_pass']))    #base64 一种加密方式
+        request.header['Proxy-Authorization'] = to_bytes('Basic'+encoded_user_pass)
+        print('-------------ProxyMiddleware have pass---------------\n'+proxy['ip_port']
+     else:
+        print('-------------ProxyMiddleware NOT pass---------------\n'+proxy['ip_port']
+        request.meta['proxy'] = to_bytes("http://%s" % proxy['ip_port'])
+
+在setting中设置:
+DOWLOADER_MIDDLEWARES = {
+    'step8_king.middlewares.ProxyMiddleware':500,
+    }
